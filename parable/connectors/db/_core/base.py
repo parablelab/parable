@@ -1,12 +1,11 @@
 from sqlalchemy import Connection, create_engine, Engine, URL
-
 from .controller import DBController
-
 
 class ConnectionHandler(DBController):
 
-    engine: Engine = None
-    conn: Connection = None
+    _engine: Engine = None
+    _conn: Connection = None
+
 
     def __init__(self, url: URL):
         """
@@ -25,28 +24,42 @@ class ConnectionHandler(DBController):
     def __connect(self):
         """
         """
-        self.conn = self.engine.connect()
+        self._conn = self.engine.connect()
         print(f"{self._url.drivername} connected.")
 
 
     def __close(self):
         """
         """
-        if self.conn:
-            self.conn.close()
+        if self._conn:
+            self._conn.close()
             print(f"{self._url.drivername} connection closed.")
 
-        if self.engine:
-            self.engine.dispose()
+        if self._engine:
+            self._engine.dispose()
             print(f"{self._url.drivername} engine disposed.")
 
 
     @property
-    def engine(self) -> Engine:
-        return create_engine(url=self._url)
+    def conn(self):
+        return self._conn
 
 
-    def connect(self):
+    @property
+    def engine(self):
+        if not self._engine:
+            self._engine = create_engine(url=self._url, **self._kwargs)
+        return self._engine
+    
+
+    @engine.setter
+    def engine(self, engine: Engine):
+        self.__close()
+        self._engine = engine
+    
+
+    def connect(self, **kwargs):
+        self._kwargs = kwargs
         self.__connect()
         return self
     
